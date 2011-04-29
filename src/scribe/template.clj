@@ -34,14 +34,14 @@
 (defn- map-to-attributes
   "Converts a map to a string of key='value' statements"
   [attrs]
-  (cs/join \space (map (fn [[k v]]
+  (s/join \space (map (fn [[k v]]
                          (str k "=" "\"" v "\""))
                        (walk/stringify-keys attrs))))
 
 (defn- escape-string
   "Escapes a string so it will always be literal in output. It shouldn't be possible for users to manually or accidentally write raw soy"
   [s]
-  (str/escape (str s) {\space "{sp}"
+  (s/escape (str s) {\space "{sp}"
                        \newline "{\n}"
                        \return "{\r}"
                        \tab "{\t}"
@@ -164,3 +164,37 @@
          (render [this] "{default}")
          (params [this] [])
          (children [this] [])))
+
+(defn foreach-cmd
+  "Creates a foreach SoyCommand"
+  [local-var data-ref children]
+  (reify SoyCommand
+         (render [this] (str "{foreach "
+                             local-var
+                             " in "
+                             data-ref "}"
+                             (reduce str (render-child children))
+                             "{/foreach}"
+                             ))
+         (params [this] (clojure.set/union (extract-params data-ref) (get-child-params children)))
+         (children [this] children)))
+
+(defn ifempty-cmd
+  "Creates an ifempty SoyCommand"
+  []
+  (reify SoyCommand
+         (render [this] "{ifempty}")
+         (params [this] [])
+         (children [this] [])))
+
+(defn for-cmd
+  "Creates a for SoyCommand. expressions is a seq of 1-3 expressions that is used as the argument to the GT range function."
+  [local-var expressions children]
+  (reify SoyCommand
+         (render [this] (str "{for "
+                             local-var
+                             " in range("
+                             (s/join ", " expressions)
+                             ")}"))
+         (params [this] (clojure.set/union (map clojure.set/union expressions) (get-child-params children)))
+         (children [this] children)))

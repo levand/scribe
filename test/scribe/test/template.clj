@@ -61,3 +61,7 @@
            (render cmd)))
     (is (= #{"foo" "bar"}
            (params cmd)))))
+
+(deftest t-foreach-cmd)
+
+(deftest t-for-cmd)
