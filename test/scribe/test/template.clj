@@ -62,6 +62,20 @@
     (is (= #{"foo" "bar"}
            (params cmd)))))
 
-(deftest t-foreach-cmd)
+(deftest t-foreach-cmd
+  (let [cmd (foreach-cmd "$foo" "$foobar"
+                         "content1"
+                         (ifempty-cmd)
+                         "content2")]
+    (is (= "{foreach $foo in $foobar}content1{ifempty}content2{/foreach}"
+           (render cmd)))
+    (is (= #{"foobar"} (params cmd)))))
 
-(deftest t-for-cmd)
+(deftest t-for-cmd
+  (let [cmd1 (for-cmd "$foo" [10] "foo")
+        cmd2 (for-cmd "$foo" [5 10] "foo")
+        cmd3 (for-cmd "$foo" [1 10 2] "foo")]
+    (is (= "{for $foo in range(10)}foo{/for}" (render cmd1)))
+    (is (= "{for $foo in range(5, 10)}foo{/for}" (render cmd2)))
+    (is (= "{for $foo in range(5, 10, 2)}foo{/for}" (render cmd2)))
+    (is (= #{"foo"}) (params cmd1))))

@@ -167,13 +167,13 @@
 
 (defn foreach-cmd
   "Creates a foreach SoyCommand"
-  [local-var data-ref children]
+  [local-var data-ref & children]
   (reify SoyCommand
          (render [this] (str "{foreach "
                              local-var
                              " in "
                              data-ref "}"
-                             (reduce str (render-child children))
+                             (reduce str (map render-child children))
                              "{/foreach}"
                              ))
          (params [this] (clojure.set/union (extract-params data-ref) (get-child-params children)))
@@ -189,12 +189,12 @@
 
 (defn for-cmd
   "Creates a for SoyCommand. expressions is a seq of 1-3 expressions that is used as the argument to the GT range function."
-  [local-var expressions children]
+  [local-var expressions & children]
   (reify SoyCommand
          (render [this] (str "{for "
                              local-var
-                             " in range("
-                             (s/join ", " expressions)
-                             ")}"))
+                             " in range(" (s/join ", " expressions) ")}"
+                             (reduce str (map render-child children))
+                             "{/for}"))
          (params [this] (clojure.set/union (map clojure.set/union expressions) (get-child-params children)))
          (children [this] children)))
