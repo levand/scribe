@@ -1,4 +1,4 @@
-(ns scribe.template
+(ns scribe.command
   (:require [clojure.walk :as walk]
             [clojure.string :as s]
             [clojure.contrib.string :as cs]
@@ -176,7 +176,10 @@
                              (reduce str (map render-child children))
                              "{/foreach}"
                              ))
-         (params [this] (clojure.set/union (extract-params data-ref) (get-child-params children)))
+         (params [this]
+                 (clojure.set/difference
+                         (clojure.set/union (get-child-params children) (extract-params data-ref))
+                         (extract-params local-var)))
          (children [this] children)))
 
 (defn ifempty-cmd
@@ -196,5 +199,45 @@
                              " in range(" (s/join ", " expressions) ")}"
                              (reduce str (map render-child children))
                              "{/for}"))
-         (params [this] (clojure.set/union (map clojure.set/union expressions) (get-child-params children)))
+         (params [this]
+                 (clojure.set/difference
+                  (reduce clojure.set/union (get-child-params children) (map extract-params expressions))
+                  (extract-params local-var)))
          (children [this] children)))
+
+(defn call-cmd
+  "Creates a call SoyCommand."
+  [template-name data-expr & children]
+  (reify SoyCommand
+         (render [this] (str "{call "
+                             template-name
+                             (if data-expr
+                               (str " data=\"" data-expr "\""))
+                             (if (seq children)
+                               (str "}"
+                                    (reduce str (map render-child children))
+                                    "{/call}")
+                               "/}")))        
+         (params [this] (clojure.set/union (extract-params data-expr) (get-child-params children)))
+         (children [this] children)))
+
+(defn param-cmd
+  "Creates a param SoyCommand"
+  [name expr & children]
+  (reify SoyCommand
+         (render [this] (str "{param " name
+                             (if expr
+                               (str ": " expr "/}")
+                               (str "}"
+                                    (reduce str (map render-child children))
+                                    "{/param}"))))
+         (params [this] (clojure.set/union (extract-params expr) (get-child-params children)))
+         (children [this] children)))
+
+(defn css-cmd
+  "Creates a CSS SoyCommand"
+  [cmd-text]
+  (reify SoyCommand
+         (render [this] (str "{css " cmd-text "}"))
+         (params [this] #{})
+         (children [this] [])))

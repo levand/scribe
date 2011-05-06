@@ -1,6 +1,6 @@
-(ns scribe.test.template
+(ns scribe.test.command
   (:use clojure.test)
-  (:use scribe.template :reload))
+  (:use scribe.command :reload))
 
 (deftest t-namespace-cmd
   (let [cmd (namespace-cmd "foo.bar")]
@@ -8,7 +8,7 @@
            (render cmd)))))
 
 (deftest t-extract-params
-  (let [extract-params (ns-resolve 'scribe.template 'extract-params)]
+  (let [extract-params (ns-resolve 'scribe.command 'extract-params)]
     (is (= #{"foo" "bar_fight" "baz"}
            (extract-params "$foo.test.var $bar_fight||$baz.biq")))))
 
@@ -66,16 +66,42 @@
   (let [cmd (foreach-cmd "$foo" "$foobar"
                          "content1"
                          (ifempty-cmd)
-                         "content2")]
+                         "content2")
+        cmd2 (foreach-cmd "$foo" "$foobar"
+                          (call-cmd ".name" "$foo"))]
     (is (= "{foreach $foo in $foobar}content1{ifempty}content2{/foreach}"
            (render cmd)))
-    (is (= #{"foobar"} (params cmd)))))
+    (is (= #{"foobar"} (params cmd)))
+    (is (= #{"foobar"} (params cmd2)))))
+
 
 (deftest t-for-cmd
   (let [cmd1 (for-cmd "$foo" [10] "foo")
         cmd2 (for-cmd "$foo" [5 10] "foo")
-        cmd3 (for-cmd "$foo" [1 10 2] "foo")]
+        cmd3 (for-cmd "$foo" [1 10 2] "foo")
+        cmd4 (for-cmd "$foo" [10] (if-cmd "$foo == $bar == $baz" "childs"))]
     (is (= "{for $foo in range(10)}foo{/for}" (render cmd1)))
     (is (= "{for $foo in range(5, 10)}foo{/for}" (render cmd2)))
     (is (= "{for $foo in range(1, 10, 2)}foo{/for}" (render cmd3)))
-    (is (= #{"foo"}) (params cmd1))))
+    (is (= #{"foo"}) (params cmd1))
+    (is (= #{"bar" "baz"} (params cmd4)))))
+
+(deftest t-call-cmd
+  (let [cmd1 (call-cmd ".myCall" "all")
+        cmd2 (call-cmd ".myCallWithKids" "$baz"
+                       (param-cmd "aparam" "$foo")
+                       (param-cmd "bparam" "$bar"))]
+    (is (= "{call .myCall data=\"all\"/}"
+           (render cmd1)))
+    (is (= "{call .myCallWithKids data=\"$baz\"}{param aparam: $foo/}{param bparam: $bar/}{/call}"
+           (render cmd2)))
+    (is (= #{"foo" "bar" "baz"}
+           (params cmd2)))))
+
+(deftest t-param-cmd
+  (let [cmd1 (param-cmd "fooparam" nil "foobar" "bazbuzz")]
+    (is (= "{param fooparam}foobarbazbuzz{/param}" (render cmd1)))))
+
+(deftest t-css-cmd
+  (let [cmd1 (css-cmd "command_text")]
+    (is (= "{css command_text}" (render cmd1)))))

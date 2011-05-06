@@ -1,7 +1,7 @@
 (ns scribe.test.core
   (:use clojure.test)
   (:use scribe.core :reload)
-  (:use scribe.template :reload))
+  (:use scribe.command :reload))
 
 ;; Test loading from files
 (deftest test-from-files
