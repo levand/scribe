@@ -77,5 +77,5 @@
         cmd3 (for-cmd "$foo" [1 10 2] "foo")]
     (is (= "{for $foo in range(10)}foo{/for}" (render cmd1)))
     (is (= "{for $foo in range(5, 10)}foo{/for}" (render cmd2)))
-    (is (= "{for $foo in range(5, 10, 2)}foo{/for}" (render cmd2)))
+    (is (= "{for $foo in range(1, 10, 2)}foo{/for}" (render cmd3)))
     (is (= #{"foo"}) (params cmd1))))
