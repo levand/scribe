@@ -42,11 +42,11 @@
   "Escapes a string so it will always be literal in output. It shouldn't be possible for users to manually or accidentally write raw soy"
   [s]
   (s/escape (str s) {\space "{sp}"
-                       \newline "{\n}"
-                       \return "{\r}"
-                       \tab "{\t}"
-                       \{ "{lb}"
-                       \} "{rb}"}))
+                     \newline "{\n}"
+                     \return "{\r}"
+                     \tab "{\t}"
+                     \{ "{lb}"
+                     \} "{rb}"}))
 
 (defn- render-child
   "Renders a child element. Handles each kind of child as appropriate."
